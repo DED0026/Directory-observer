@@ -21,20 +21,35 @@ namespace Directory_observer
 
         private void button1_Click(object sender, EventArgs e)
         {
-            if (!(textBox1.Text.EndsWith("\\")|| textBox1.Text.EndsWith("/")))
-            {
-                textBox1.Text += "\\";
-            }
             reload();
         }
 
-
-        FileSystemWatcher Folderwatcher = new FileSystemWatcher();
+        FileSystemWatcher Folderwatcher;
         public void reload()
         {
             if (Directory.Exists(textBox1.Text))
             {
                 textBox1.Text = Path.GetFullPath(textBox1.Text);
+                try
+                {
+                    Folderwatcher.Dispose();
+                }
+                catch { }
+                Folderwatcher = new FileSystemWatcher(textBox1.Text, "*.*");
+                Folderwatcher.NotifyFilter = NotifyFilters.Attributes
+                                     | NotifyFilters.CreationTime
+                                     | NotifyFilters.DirectoryName
+                                     | NotifyFilters.FileName
+                                     | NotifyFilters.LastAccess
+                                     | NotifyFilters.LastWrite
+                                     | NotifyFilters.Security
+                                     | NotifyFilters.Size;
+                Folderwatcher.EnableRaisingEvents = true;
+                Folderwatcher.Created += Watcher_event;
+                Folderwatcher.Deleted += Watcher_event;
+                Folderwatcher.Renamed += Watcher_event;
+                Folderwatcher.Changed += Watcher_event;
+                Folderwatcher.Error += Watcher_Error;
 
                 listBox1.Items.Clear();
                 listBox1.Items.Add("..");
@@ -45,10 +60,19 @@ namespace Directory_observer
             }
             else
             {
-                MessageBox.Show("directory doesnt exist, backtracking.");
                 textBox1.Text = Path.GetDirectoryName(textBox1.Text);
                 reload();
             }
+        }
+
+        private void Watcher_Error(object sender, ErrorEventArgs e)
+        {
+            reload();
+        }
+
+        private void Watcher_event(object sender, FileSystemEventArgs e)
+        {
+            reload();
         }
 
         private void textBox1_TextChanged(object sender, EventArgs e)
@@ -60,6 +84,9 @@ namespace Directory_observer
 
         private void listBox1_DoubleClick(object sender, EventArgs e)
         {
+            if (listBox1.SelectedIndex == -1)
+                return;
+
             if (listBox1.SelectedIndex == LastIndex)
             {
                 string selection = textBox1.Text + "\\" + listBox1.SelectedItem.ToString();
