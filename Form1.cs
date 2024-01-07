@@ -1,79 +1,58 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Directory_observer
 {
     public partial class Form1 : Form
     {
-        public Form1()
-        {
-            InitializeComponent();
-        }
+        public Form1() => InitializeComponent();
 
-        private void button1_Click(object sender, EventArgs e)
-        {
-            reload();
-        }
+        private void button1_Click(object sender, EventArgs e) => reload();
 
         FileSystemWatcher Folderwatcher;
         public void reload()
         {
-            if (Directory.Exists(textBox1.Text))
-            {
-                textBox1.Text = Path.GetFullPath(textBox1.Text);
-                try
-                {
-                    Folderwatcher.Dispose();
-                }
-                catch { }
-                Folderwatcher = new FileSystemWatcher(textBox1.Text, "*.*");
-                Folderwatcher.NotifyFilter = NotifyFilters.Attributes
-                                     | NotifyFilters.CreationTime
-                                     | NotifyFilters.DirectoryName
-                                     | NotifyFilters.FileName
-                                     | NotifyFilters.LastAccess
-                                     | NotifyFilters.LastWrite
-                                     | NotifyFilters.Security
-                                     | NotifyFilters.Size;
-                Folderwatcher.EnableRaisingEvents = true;
-                Folderwatcher.Created += Watcher_event;
-                Folderwatcher.Deleted += Watcher_event;
-                Folderwatcher.Renamed += Watcher_event;
-                Folderwatcher.Changed += Watcher_event;
-                Folderwatcher.Error += Watcher_Error;
-
-                listBox1.Items.Clear();
-                listBox1.Items.Add("..");
-                foreach (string file in Directory.GetFiles(textBox1.Text))
-                    listBox1.Items.Add(file.Remove(0, textBox1.TextLength).Trim('\\'));
-                foreach (string directory in Directory.GetDirectories(textBox1.Text))
-                    listBox1.Items.Add(directory.Remove(0, textBox1.TextLength).Trim('\\'));
-            }
-            else
+            if (!Directory.Exists(textBox1.Text))
             {
                 textBox1.Text = Path.GetDirectoryName(textBox1.Text);
                 reload();
+                return;
             }
+            textBox1.Text = Path.GetFullPath(textBox1.Text);
+            try { Folderwatcher.Dispose(); }
+            catch { }
+
+            Folderwatcher = new FileSystemWatcher(textBox1.Text, "*.*")
+            {
+                NotifyFilter = NotifyFilters.CreationTime
+                                 | NotifyFilters.Attributes
+                                 | NotifyFilters.DirectoryName
+                                 | NotifyFilters.FileName
+                                 | NotifyFilters.Security
+                                 | NotifyFilters.Size,
+                EnableRaisingEvents = true
+            };
+
+            Folderwatcher.Created += Watcher_event;
+            Folderwatcher.Deleted += Watcher_event;
+            Folderwatcher.Renamed += Watcher_event;
+            Folderwatcher.Changed += Watcher_event;
+            Folderwatcher.Error += Watcher_Error;
+
+            listBox1.Items.Clear();
+            listBox1.Items.Add("..");
+            foreach (string file in Directory.GetFiles(textBox1.Text))
+                listBox1.Items.Add(file.Remove(0, textBox1.TextLength).Trim('\\'));
+            foreach (string directory in Directory.GetDirectories(textBox1.Text))
+                listBox1.Items.Add(directory.Remove(0, textBox1.TextLength).Trim('\\'));
         }
 
-        private void Watcher_Error(object sender, ErrorEventArgs e)
-        {
-            reload();
-        }
+        private void Watcher_Error(object sender, ErrorEventArgs e) => reload();
 
-        private void Watcher_event(object sender, FileSystemEventArgs e)
-        {
-            reload();
-        }
+        private void Watcher_event(object sender, FileSystemEventArgs e) => reload();
 
         private void textBox1_TextChanged(object sender, EventArgs e)
         {
